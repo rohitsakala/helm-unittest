@@ -11,12 +11,12 @@ workspace:
 
 steps:
   - name: build
-    image: golang:1.11
+    image: golang:1.12
     volumes:
       - name: docker
         path: /var/run/docker.sock
     commands:
-      - mkdir /go/bin 
+      - mkdir /go/bin
       - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - dep ensure
       - make dist
