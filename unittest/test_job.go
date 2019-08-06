@@ -2,6 +2,7 @@ package unittest
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path"
 	"path/filepath"
@@ -137,6 +138,7 @@ func (t *TestJob) renderChart(targetChart *chart.Chart, userValues []byte) (map[
 	if err != nil {
 		return nil, err
 	}
+
 	return outputOfFiles, nil
 }
 
@@ -165,24 +167,32 @@ func (t *TestJob) parseManifestsFromOutputOfFiles(outputOfFiles map[string]strin
 	error,
 ) {
 	manifestsOfFiles := make(map[string][]common.K8sManifest)
-	for file, rendered := range outputOfFiles {
-		if filepath.Ext(file) == ".yaml" {
-			documents := strings.Split(rendered, "---")
-			manifests := make([]common.K8sManifest, 0, len(documents))
 
-			for _, doc := range documents {
+	for file, rendered := range outputOfFiles {
+		decoder := yaml.NewDecoder(strings.NewReader(rendered))
+
+		if filepath.Ext(file) == ".yaml" {
+			manifests := make([]common.K8sManifest, 0)
+
+			for {
 				manifest := make(common.K8sManifest)
-				if err := yaml.Unmarshal([]byte(doc), manifest); err != nil {
-					return nil, err
+				if err := decoder.Decode(manifest); err != nil {
+					if err == io.EOF {
+						break
+					} else {
+						return nil, err
+					}
 				}
 
 				if len(manifest) > 0 {
 					manifests = append(manifests, manifest)
 				}
 			}
+
 			manifestsOfFiles[file] = manifests
 		}
 	}
+
 	return manifestsOfFiles, nil
 }
 
@@ -212,8 +222,10 @@ func (t *TestJob) polishAssertionsTemplate(targetChart *chart.Chart) {
 	if t.chartRoute == "" {
 		t.chartRoute = targetChart.Metadata.Name
 	}
+
 	for _, assertion := range t.Assertions {
 		var templateToAssert string
+
 		if assertion.Template == "" {
 			if t.defaultTemplateToAssert == "" {
 				return
@@ -222,6 +234,10 @@ func (t *TestJob) polishAssertionsTemplate(targetChart *chart.Chart) {
 		} else {
 			templateToAssert = assertion.Template
 		}
-		assertion.Template = filepath.Join(t.chartRoute, "templates", templateToAssert)
+
+		// map the file name to the path of helm rendered result
+		assertion.Template = filepath.ToSlash(
+			filepath.Join(t.chartRoute, "templates", templateToAssert),
+		)
 	}
 }
