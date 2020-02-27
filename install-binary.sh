@@ -5,6 +5,16 @@
 PROJECT_NAME="helm-unittest"
 PROJECT_GH="rancher/$PROJECT_NAME"
 
+: ${HELM_PLUGIN_PATH:="$(helm home)/plugins/helm-unittest"}
+
+# Convert the HELM_PLUGIN_PATH to unix if cygpath is
+# available. This is the case when using MSYS2 or Cygwin
+# on Windows where helm returns a Windows path but we
+# need a Unix path
+if type cygpath &> /dev/null; then
+  HELM_PLUGIN_PATH=$(cygpath -u $HELM_PLUGIN_PATH)
+fi
+
 if [[ $SKIP_BIN_INSTALL == "1" ]]; then
   echo "Skipping binary install"
   exit
@@ -89,10 +99,10 @@ installFile() {
   mkdir -p "$HELM_TMP"
   tar xf "$PLUGIN_TMP_FILE" -C "$HELM_TMP"
   HELM_TMP_BIN="$HELM_TMP/untt"
-  echo "Preparing to install into ${HELM_PLUGIN_DIR}"
+  echo "Preparing to install into ${HELM_PLUGIN_PATH}"
   # Use * to also copy the file withe the exe suffix on Windows
-  cp "$HELM_TMP_BIN"* "$HELM_PLUGIN_DIR"
-  echo "$PROJECT_NAME installed into $HELM_PLUGIN_DIR"
+  cp "$HELM_TMP_BIN"* "$HELM_PLUGIN_PATH"
+  echo "$PROJECT_NAME installed into $HELM_PLUGIN_PATH"
 }
 
 # fail_trap is executed if an error occurs.
@@ -109,7 +119,7 @@ fail_trap() {
 testVersion() {
   # To avoid to keep track of the Windows suffix,
   # call the plugin assuming it is in the PATH
-  PATH=$PATH:$HELM_PLUGIN_DIR
+  PATH=$PATH:$HELM_PLUGIN_PATH
   untt -h
 }
 
