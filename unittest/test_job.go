@@ -44,6 +44,8 @@ type TestJob struct {
 	}
 	Capabilities struct {
 		APIVersions []string
+		KubeVersionMajor string
+		KubeVersionMinor string
 	}
 	// route indicate which chart in the dependency hierarchy
 	// like "parant-chart", "parent-charts/charts/child-chart"
@@ -168,7 +170,13 @@ func (t *TestJob) releaseOption() *chartutil.ReleaseOptions {
 // get chartutil.CapabilityOptions ready for render
 // Only supports APIVersions for now
 func (t *TestJob) capabilityOption() *chartutil.Capabilities {
-	options := chartutil.Capabilities{APIVersions: chartutil.DefaultVersionSet}
+	options := chartutil.Capabilities{APIVersions: chartutil.DefaultVersionSet, KubeVersion: chartutil.DefaultKubeVersion}
+	if t.Capabilities.KubeVersionMajor != "" {
+		options.KubeVersion.Major = t.Capabilities.KubeVersionMajor
+	}
+	if t.Capabilities.KubeVersionMinor != "" {
+		options.KubeVersion.Minor = t.Capabilities.KubeVersionMinor
+	}
 	if len(t.Capabilities.APIVersions) > 0 {
 		var arr []string
 		arr = append(t.Capabilities.APIVersions, "v1")

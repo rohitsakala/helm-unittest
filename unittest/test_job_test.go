@@ -57,6 +57,9 @@ func TestRunJobOk(t *testing.T) {
 	c, _ := chartutil.Load("../__fixtures__/basic")
 	manifest := `
 it: should work
+capabilities:
+  kubeversionmajor: 2
+  kubeversionminor: 5
 asserts:
   - equal:
       path: kind
@@ -65,6 +68,14 @@ asserts:
   - matchRegex:
       path: metadata.name
       pattern: -basic$
+    template: deployment.yaml
+  - equal:
+      path: metadata.labels.major
+      value: 2
+    template: deployment.yaml
+  - equal:
+      path: metadata.labels.minor
+      value: 5
     template: deployment.yaml
 `
 	var tj TestJob
@@ -77,7 +88,7 @@ asserts:
 
 	a.Nil(testResult.ExecError)
 	a.True(testResult.Passed)
-	a.Equal(2, len(testResult.AssertsResult))
+	a.Equal(4, len(testResult.AssertsResult))
 }
 
 func TestRunJobWithAssertionFail(t *testing.T) {

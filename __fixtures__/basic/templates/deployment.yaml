@@ -8,6 +8,8 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    major: {{ .Capabilities.KubeVersion.Major }}
+    minor: {{ .Capabilities.KubeVersion.Minor }}
 spec:
   replicas: {{ .Values.replicaCount }}
   template:
